@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="hu">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -504,6 +504,30 @@
         }
         
         #resetBtn { background: #7f8c8d; box-shadow: 0 10px 0 #2c3e50; font-size: 18px; padding: 10px 25px; margin-top: 15px; }
+
+        #languageSelector {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 230;
+        }
+        .lang-btn {
+            width: 56px;
+            height: 56px;
+            padding: 0;
+            font-size: 30px;
+            min-width: 56px;
+            border-radius: 50%;
+            text-transform: none;
+            background: linear-gradient(180deg, #607d8b, #455a64 58%, #37474f);
+            box-shadow: 0 8px 0 #263238, 0 14px 24px rgba(24, 37, 44, 0.45);
+        }
+        .lang-btn.active {
+            background: linear-gradient(180deg, #ffd57a, #f39c12 58%, #bf7004);
+            box-shadow: 0 8px 0 #8f5300, 0 14px 24px rgba(143, 85, 8, 0.46);
+        }
 
         .btn:hover { transform: translateY(-3px) scale(1.06); filter: brightness(1.08) saturate(1.08); }
         .btn:active { transform: translateY(6px) scale(0.99); box-shadow: 0 4px 0 rgba(40,40,40,0.55); }
@@ -1040,10 +1064,10 @@
     <canvas id="gameCanvas"></canvas>
     <button id="menuBtn" class="btn hamburger" style="display:none;">☰</button>
     <div id="ui">
-        SZINT: <span id="lvlDisplay">1</span> | PONT: <span id="score">0</span>
+        <span id="levelLabel">SZINT</span>: <span id="lvlDisplay">1</span> | <span id="scoreLabel">PONT</span>: <span id="score">0</span>
     </div>
     <div id="heartsUI"></div>
-    <div id="timerUI">IDŐ: <span id="timeVal">0.00</span></div>
+    <div id="timerUI"><span id="timeLabel">IDŐ</span>: <span id="timeVal">0.00</span></div>
     <div id="mobileControls" aria-hidden="true">
         <div class="mobile-cluster mobile-left-controls">
             <button id="leftTouchBtn" class="mobile-btn" type="button">◀</button>
@@ -1056,34 +1080,38 @@
     <div id="rotatePhoneHint" aria-hidden="true">
         <div class="rotate-card">
             <div class="rotate-icon">📱</div>
-            <div class="rotate-title">Fordítsd el a telefont</div>
-            <div class="rotate-copy">Ez a verzió fekvő mobilnézetre van optimalizálva. Fordítsd oldalra a jobb irányításhoz.</div>
+            <div id="rotateTitle" class="rotate-title">Fordítsd el a telefont</div>
+            <div id="rotateCopy" class="rotate-copy">Ez a verzió fekvő mobilnézetre van optimalizálva. Fordítsd oldalra a jobb irányításhoz.</div>
         </div>
     </div>
     
     <div id="splashScreen">
-        <h1>Kattints a képernyőre</h1>
+        <h1 id="splashTitle">Kattints a képernyőre</h1>
     </div>
 
     <div id="mainMenu">
-        <h1 id="menuTitle">UGRI BUGRI</h1>
+        <h1 id="menuTitle">BUMPY JUMPY</h1>
         <div class="btn-container">
             <button id="startBtn" class="btn">START</button>
             <button id="speedrunBtn" class="btn">SPEEDRUN</button>
             <button id="achievementsBtn" class="btn">EREDMÉNYEK</button>
             <button id="muteBtn" class="btn">🔊</button>
         </div>
+        <div id="languageSelector">
+            <button id="langEnBtn" class="btn lang-btn" type="button" aria-label="English" title="English">🇬🇧</button>
+            <button id="langHuBtn" class="btn lang-btn" type="button" aria-label="Hungarian" title="Hungarian">🇭🇺</button>
+        </div>
         <div id="levelButtonsContainer" style="margin-top:20px; z-index:210; display:none; flex-wrap: nowrap; gap:10px;"></div>
         <div id="achievementsSection" style="margin-top:20px; z-index:210;">
             <div id="achievementsPanel">
-                <div class="ach-title">Eredmények</div>
+                <div id="achievementsPanelTitle" class="ach-title">Eredmények</div>
                 <div id="achievementsList"></div>
             </div>
         </div>
         <button id="backBtn" class="btn" style="display:none; margin-top:20px;">Vissza</button>
         
         <div id="leaderboard">
-            <div class="lb-title">🏆 SPEEDRUN TOPLISTA</div>
+            <div id="leaderboardTitle" class="lb-title">🏆 SPEEDRUN TOPLISTA</div>
             <div id="leaderboardList"></div>
         </div>
 
@@ -1198,8 +1226,138 @@
         const achievementNameEl = document.getElementById('achievementName');
         const achievementDescEl = document.getElementById('achievementDesc');
         const achievementsListEl = document.getElementById('achievementsList');
+        const levelLabelEl = document.getElementById('levelLabel');
+        const scoreLabelEl = document.getElementById('scoreLabel');
+        const timeLabelEl = document.getElementById('timeLabel');
+        const rotateTitleEl = document.getElementById('rotateTitle');
+        const rotateCopyEl = document.getElementById('rotateCopy');
+        const splashTitleEl = document.getElementById('splashTitle');
+        const startBtnEl = document.getElementById('startBtn');
+        const speedrunBtnEl = document.getElementById('speedrunBtn');
+        const achievementsBtnEl = document.getElementById('achievementsBtn');
+        const menuTitleEl = document.getElementById('menuTitle');
+        const backBtnEl = document.getElementById('backBtn');
+        const resetBtnEl = document.getElementById('resetBtn');
+        const achievementsPanelTitleEl = document.getElementById('achievementsPanelTitle');
+        const leaderboardTitleEl = document.getElementById('leaderboardTitle');
+        const statsEl = document.getElementById('stats');
+        const achievementTitleEl = document.getElementById('achievementTitle');
+        const langEnBtn = document.getElementById('langEnBtn');
+        const langHuBtn = document.getElementById('langHuBtn');
         const defaultAchievementIconMarkup = achievementIconEl.innerHTML;
         let achievementIconInstanceCounter = 0;
+
+        const I18N = {
+            hu: {
+                docTitle: 'UGRI BUGRI - ',
+                menuTitle: 'UGRI BUGRI',
+                levelLabel: 'SZINT',
+                scoreLabel: 'PONT',
+                timeLabel: 'IDŐ',
+                rotateTitle: 'Fordítsd el a telefont',
+                rotateCopy: 'Ez a verzió fekvő mobilnézetre van optimalizálva. Fordítsd oldalra a jobb irányításhoz.',
+                splashTitle: 'Kattints a képernyőre',
+                startBtn: 'START',
+                speedrunBtn: 'SPEEDRUN',
+                achievementsBtn: 'EREDMÉNYEK',
+                achievementsPanelTitle: 'Eredmények',
+                backBtn: 'Vissza',
+                leaderboardTitle: '🏆 SPEEDRUN TOPLISTA',
+                stats: 'Irányítás: WASD / Nyilak + Szóköz',
+                resetBtn: 'Adatok törlése',
+                achievementTitle: 'EREDMÉNY FELOLDVA',
+                resetConfirm: 'Biztosan törölni akarod a mentett pontszámot, időt és eredmény haladást? (Utána újra feloldhatók)',
+                levelPrefix: 'Szint',
+                badgeUnlocked: 'FELOLDVA',
+                badgeLocked: 'ZÁROLVA',
+                allLevelsDoneTime: 'MINDEN PÁLYA KÉSZ! 🏆\nIDŐ: {time}s',
+                allLevelsDoneScore: 'MINDEN PÁLYA KÉSZ! 🏆\nÖSSZES PONT: {score}',
+                gameOver: 'GAME OVER',
+                levelComplete: 'SZINT TELJESÍTVE! 🚩',
+                leaderboardYou: 'TE',
+                langEn: 'English',
+                langHu: 'Magyar'
+            },
+            en: {
+                docTitle: 'BUMPY JUMPY - ',
+                menuTitle: 'BUMPY JUMPY',
+                levelLabel: 'LEVEL',
+                scoreLabel: 'SCORE',
+                timeLabel: 'TIME',
+                rotateTitle: 'Rotate your phone',
+                rotateCopy: 'This version is optimized for landscape mobile view. Turn your phone sideways for better controls.',
+                splashTitle: 'Tap the screen',
+                startBtn: 'START',
+                speedrunBtn: 'SPEEDRUN',
+                achievementsBtn: 'ACHIEVEMENTS',
+                achievementsPanelTitle: 'Achievements',
+                backBtn: 'Back',
+                leaderboardTitle: '🏆 SPEEDRUN LEADERBOARD',
+                stats: 'Controls: WASD / Arrows + Space',
+                resetBtn: 'Reset Data',
+                achievementTitle: 'ACHIEVEMENT UNLOCKED',
+                resetConfirm: 'Are you sure you want to delete saved score, time, and achievement progress? (They can be unlocked again after)',
+                levelPrefix: 'Level',
+                badgeUnlocked: 'UNLOCKED',
+                badgeLocked: 'LOCKED',
+                allLevelsDoneTime: 'ALL LEVELS COMPLETE! 🏆\nTIME: {time}s',
+                allLevelsDoneScore: 'ALL LEVELS COMPLETE! 🏆\nTOTAL SCORE: {score}',
+                gameOver: 'GAME OVER',
+                levelComplete: 'LEVEL COMPLETE! 🚩',
+                leaderboardYou: 'YOU',
+                langEn: 'English',
+                langHu: 'Hungarian'
+            }
+        };
+        let currentLanguage = localStorage.getItem('ugriBugriLanguage') || 'en';
+        if (!I18N[currentLanguage]) currentLanguage = 'en';
+
+        function t(key) {
+            return (I18N[currentLanguage] && I18N[currentLanguage][key]) || I18N.hu[key] || key;
+        }
+
+        function formatText(template, values) {
+            return template.replace(/\{(\w+)\}/g, (m, key) => (values[key] !== undefined ? String(values[key]) : m));
+        }
+
+        function applyLanguage() {
+            document.documentElement.lang = currentLanguage;
+            document.title = t('docTitle');
+            menuTitleEl.textContent = t('menuTitle');
+            levelLabelEl.textContent = t('levelLabel');
+            scoreLabelEl.textContent = t('scoreLabel');
+            timeLabelEl.textContent = t('timeLabel');
+            rotateTitleEl.textContent = t('rotateTitle');
+            rotateCopyEl.textContent = t('rotateCopy');
+            splashTitleEl.textContent = t('splashTitle');
+            startBtnEl.textContent = t('startBtn');
+            speedrunBtnEl.textContent = t('speedrunBtn');
+            achievementsBtnEl.textContent = t('achievementsBtn');
+            achievementsPanelTitleEl.textContent = t('achievementsPanelTitle');
+            backBtnEl.textContent = t('backBtn');
+            leaderboardTitleEl.textContent = t('leaderboardTitle');
+            statsEl.textContent = t('stats');
+            resetBtnEl.textContent = t('resetBtn');
+            achievementTitleEl.textContent = t('achievementTitle');
+            langEnBtn.textContent = '🇬🇧';
+            langHuBtn.textContent = '🇭🇺';
+            langEnBtn.setAttribute('aria-label', t('langEn'));
+            langHuBtn.setAttribute('aria-label', t('langHu'));
+            langEnBtn.title = t('langEn');
+            langHuBtn.title = t('langHu');
+            langEnBtn.classList.toggle('active', currentLanguage === 'en');
+            langHuBtn.classList.toggle('active', currentLanguage === 'hu');
+        }
+
+        function setLanguage(lang) {
+            if (!I18N[lang]) return;
+            currentLanguage = lang;
+            localStorage.setItem('ugriBugriLanguage', lang);
+            applyLanguage();
+            renderAchievementsMenu();
+            populateLevelButtons();
+            updateLeaderboard();
+        }
 
         function escapeRegex(value) {
             return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -1291,7 +1449,7 @@
         });
 
         document.getElementById('resetBtn').addEventListener('click', () => {
-            if(confirm("Biztosan törölni akarod a mentett pontszámot, időt és eredmény haladást? (Utána újra feloldhatók)")) {
+            if(confirm(t('resetConfirm'))) {
                 localStorage.removeItem('ugriBugriHighScore');
                 localStorage.removeItem('ugriBugriBestTime');
                 localStorage.removeItem('ugriBugriUnlockedLevels');
@@ -1310,6 +1468,9 @@
                 playClickSound();
             }
         });
+
+        langEnBtn.addEventListener('click', () => setLanguage('en'));
+        langHuBtn.addEventListener('click', () => setLanguage('hu'));
 
         let isMenuMusicPlaying = false; let currentBgmVolume = 0.03; let bgmIntervalId; let fadeIntervalId;
 
@@ -1736,6 +1897,35 @@
             'az_erinthetetlen_ugri',
             'plati_mati'
         ];
+        const ACHIEVEMENT_I18N = {
+            hu: {
+                bugri_mugri_palacsinta: { name: 'Bugri Mugri Palacsinta', description: 'Lapíts ki egy Bugri Mugri-t' },
+                ugri_bugri: { name: 'Ugri Bugri', description: 'Teljesítsd az összes pályát' },
+                az_erinthetetlen_ugri: { name: 'Az érinthetetlen Ugri', description: 'Teljesitsd a játékot nulla halállal' },
+                penzi_menzi: { name: 'Pénzi Mézi', description: 'Gyüjtsd össze az összes érmét' },
+                bugrinator: { name: 'Bugrinátor', description: 'Lapítsd ki az összes Bugri Mugri-t' },
+                huss_muss: { name: 'Pik Pakk', description: 'Teljesitsd a Speedrun módot gyorsabban, mint a fejlesztő' },
+                plati_mati: { name: 'Plati Mati', description: 'Érd el az összes eredményt' }
+            },
+            en: {
+                bugri_mugri_palacsinta: { name: 'Mugly Bugly Pancake', description: 'Flatten a Mugly Bugly' },
+                ugri_bugri: { name: 'Bumpy Jumpy', description: 'Complete all levels' },
+                az_erinthetetlen_ugri: { name: 'Untouchable Jumpy', description: 'Finish the game with zero deaths' },
+                penzi_menzi: { name: 'Honey Money', description: 'Collect all coins' },
+                bugrinator: { name: 'Buglinator', description: 'Flatten all Mugly Bugly enemies' },
+                huss_muss: { name: 'Zip Zap', description: 'Beat Speedrun mode faster than the developer' },
+                plati_mati: { name: 'Platy Maty', description: 'Unlock all achievements' }
+            }
+        };
+
+        function getAchievementText(id) {
+            const fallback = ACHIEVEMENTS[id] || {};
+            const localized = (ACHIEVEMENT_I18N[currentLanguage] && ACHIEVEMENT_I18N[currentLanguage][id]) || {};
+            return {
+                name: localized.name || fallback.name || id,
+                description: localized.description || fallback.description || ''
+            };
+        }
         let achievementHideTimeout = null;
         let unlockedAchievements = {};
         try {
@@ -1754,16 +1944,17 @@
             })
             .map(([id, ach]) => {
                 const unlocked = !!unlockedAchievements[id];
+                const text = getAchievementText(id);
                 return `
                 <div class="ach-item${unlocked ? '' : ' locked'}">
                     <div class="ach-item-main">
                         <div class="ach-item-icon">${scopeAchievementIconMarkup(ach.icon || defaultAchievementIconMarkup)}</div>
                         <div class="ach-item-text">
-                            <div class="ach-item-name">${ach.name}</div>
-                            <div class="ach-item-desc">${ach.description}</div>
+                            <div class="ach-item-name">${text.name}</div>
+                            <div class="ach-item-desc">${text.description}</div>
                         </div>
                     </div>
-                    <span class="ach-badge${unlocked ? '' : ' locked'}">${unlocked ? 'FELOLDVA' : 'ZÁROLVA'}</span>
+                    <span class="ach-badge${unlocked ? '' : ' locked'}">${unlocked ? t('badgeUnlocked') : t('badgeLocked')}</span>
                 </div>`;
             }).join('');
         }
@@ -1785,7 +1976,8 @@
             unlockedAchievements[id] = true;
             localStorage.setItem('ugriBugriAchievements', JSON.stringify(unlockedAchievements));
             renderAchievementsMenu();
-            showAchievementToast(ACHIEVEMENTS[id].name, ACHIEVEMENTS[id].description, ACHIEVEMENTS[id].icon);
+            const achievementText = getAchievementText(id);
+            showAchievementToast(achievementText.name, achievementText.description, ACHIEVEMENTS[id].icon);
             if (id !== 'plati_mati') {
                 const allOthers = Object.keys(ACHIEVEMENTS).filter(k => k !== 'plati_mati');
                 if (allOthers.every(k => unlockedAchievements[k])) {
@@ -2101,7 +2293,7 @@
             for (let i = 0; i < levels.length; i++) {
                 const btn = document.createElement('button');
                 btn.className = 'btn level-btn';
-                btn.textContent = 'Szint ' + (i + 1);
+                btn.textContent = t('levelPrefix') + ' ' + (i + 1);
                 const isUnlocked = i < unlockedLevelCount;
                 const hue = (i * 40) % 360;
                 if (isUnlocked) {
@@ -2135,6 +2327,7 @@
             populateLevelButtons();
             document.getElementById('menuTitle').style.display = 'none';
             document.querySelector('#mainMenu .btn-container').style.display = 'none';
+            document.getElementById('languageSelector').style.display = 'none';
             document.getElementById('leaderboard').style.display = 'none';
             document.getElementById('stats').style.display = 'none';
             document.getElementById('resetBtn').style.display = 'none';
@@ -2152,6 +2345,8 @@
                 container.style.display = 'none';
                 document.querySelector('#mainMenu .btn-container').style.display = 'flex';
                 document.querySelector('#mainMenu .btn-container').style.opacity = '0';
+                document.getElementById('languageSelector').style.display = 'flex';
+                document.getElementById('languageSelector').style.opacity = '0';
                 document.getElementById('leaderboard').style.display = 'block';
                 document.getElementById('leaderboard').style.opacity = '0';
                 document.getElementById('stats').style.display = 'block';
@@ -2162,6 +2357,7 @@
                 document.getElementById('menuTitle').style.opacity = '0';
                 setTimeout(() => {
                     document.querySelector('#mainMenu .btn-container').style.opacity = '1';
+                    document.getElementById('languageSelector').style.opacity = '1';
                     document.getElementById('leaderboard').style.opacity = '1';
                     document.getElementById('stats').style.opacity = '1';
                     document.getElementById('resetBtn').style.opacity = '1';
@@ -2175,6 +2371,7 @@
             menuSubView = 'achievements';
             document.getElementById('menuTitle').style.display = 'none';
             document.querySelector('#mainMenu .btn-container').style.display = 'none';
+            document.getElementById('languageSelector').style.display = 'none';
             document.getElementById('leaderboard').style.display = 'none';
             document.getElementById('stats').style.display = 'none';
             document.getElementById('resetBtn').style.display = 'none';
@@ -2194,6 +2391,8 @@
                 section.style.display = 'none';
                 document.querySelector('#mainMenu .btn-container').style.display = 'flex';
                 document.querySelector('#mainMenu .btn-container').style.opacity = '0';
+                document.getElementById('languageSelector').style.display = 'flex';
+                document.getElementById('languageSelector').style.opacity = '0';
                 document.getElementById('leaderboard').style.display = 'block';
                 document.getElementById('leaderboard').style.opacity = '0';
                 document.getElementById('stats').style.display = 'block';
@@ -2204,6 +2403,7 @@
                 document.getElementById('menuTitle').style.opacity = '0';
                 setTimeout(() => {
                     document.querySelector('#mainMenu .btn-container').style.opacity = '1';
+                    document.getElementById('languageSelector').style.opacity = '1';
                     document.getElementById('leaderboard').style.opacity = '1';
                     document.getElementById('stats').style.opacity = '1';
                     document.getElementById('resetBtn').style.opacity = '1';
@@ -2400,7 +2600,7 @@
                 { name: "Juli Puli", time: 77.99 },
                 { name: "Juci Puci", time: 77.34 }
             ];
-            if (bestTime) { players.push({ name: "TE", time: parseFloat(bestTime), isPlayer: true }); }
+            if (bestTime) { players.push({ name: t('leaderboardYou'), time: parseFloat(bestTime), isPlayer: true }); }
             players.sort((a, b) => a.time - b.time);
             lbContainer.innerHTML = players.map((p, i) => `
                 <div class="lb-row ${p.isPlayer ? 'player' : ''}">
@@ -2481,14 +2681,14 @@
                         if (bestTimeEl) bestTimeEl.innerText = bestTime;
                     }
                     if (finalTimeNum < 77.99) unlockAchievement('huss_muss');
-                    msgEl.innerText = "MINDEN PÁLYA KÉSZ! 🏆\nIDŐ: " + timeVal.innerText + "s";
+                    msgEl.innerText = formatText(t('allLevelsDoneTime'), { time: timeVal.innerText });
                 } else {
                     if (score > highScore) {
                         highScore = score;
                         localStorage.setItem('ugriBugriHighScore', highScore);
                         if (highScoreEl) highScoreEl.innerText = highScore;
                     }
-                    msgEl.innerText = "MINDEN PÁLYA KÉSZ! 🏆\nÖSSZES PONT: " + score;
+                    msgEl.innerText = formatText(t('allLevelsDoneScore'), { score: score });
                 }
                 msgEl.classList.remove('level-complete', 'game-over', 'all-complete');
                 void msgEl.offsetWidth;
@@ -2548,7 +2748,7 @@
                     timerUI.style.display = 'none';
                     heartsUI.style.display = 'none';
                     document.getElementById('menuBtn').style.display = 'none';
-                    msgEl.innerText = "GAME OVER";
+                    msgEl.innerText = t('gameOver');
                     msgEl.classList.remove('level-complete', 'show');
                     void msgEl.offsetWidth;
                     msgEl.classList.add('show', 'game-over');
@@ -3112,7 +3312,7 @@ ctx.fill();
 
             if (player.x + player.w > levels[currentLevel].flagX) {
                 changingLevel = true;
-                msgEl.innerText = "SZINT TELJESÍTVE! 🚩";
+                msgEl.innerText = t('levelComplete');
                 msgEl.classList.remove('show', 'level-complete');
                 void msgEl.offsetWidth;
                 msgEl.classList.add('show', 'level-complete');
@@ -3122,6 +3322,8 @@ ctx.fill();
             }
             draw(); requestAnimationFrame(update);
         }
+
+        applyLanguage();
 
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
