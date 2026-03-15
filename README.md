@@ -16,3 +16,10 @@ This project focuses on smooth physics and animations.
 
 ## 🕹️ How to Play
 Use **Arrow Keys** or **WASD** to move and jump.
+
+## 🛠️ UPDATE
+
+- Auto-jump edge detection fix
+- Manual Low Detail Mode toggle with localStorage persistence
+- Raised pixel threshold for QHD support
+- Multilingual quality button labels
