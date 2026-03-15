@@ -502,6 +502,26 @@
             padding: 18px; width: 75px; height: 75px; 
             display: flex; align-items: center; justify-content: center; font-size: 32px;
         }
+        #qualityBtn {
+            background: linear-gradient(180deg, #a8e6a3, #2ecc71 58%, #1e9f55);
+            box-shadow: 0 10px 0 #14703c, 0 16px 26px rgba(18, 100, 56, 0.45);
+            width: 75px; height: 75px; padding: 0;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+            font-size: 26px;
+        }
+        #qualityBtn.low-detail {
+            background: linear-gradient(180deg, #f0a070, #e67e22 58%, #b35a12);
+            box-shadow: 0 10px 0 #7d3b08, 0 16px 26px rgba(120, 60, 10, 0.45);
+        }
+        #qualityBtn .q-label {
+            font-size: 9px;
+            letter-spacing: 0.04em;
+            text-align: center;
+            color: rgba(255,255,255,0.9);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            pointer-events: none;
+            line-height: 1;
+        }
         
         #resetBtn { background: #7f8c8d; box-shadow: 0 10px 0 #2c3e50; font-size: 18px; padding: 10px 25px; margin-top: 15px; }
 
@@ -1096,6 +1116,7 @@
             <button id="speedrunBtn" class="btn">SPEEDRUN</button>
             <button id="achievementsBtn" class="btn">EREDMÉNYEK</button>
             <button id="muteBtn" class="btn">🔊</button>
+            <button id="qualityBtn" class="btn">🎮<span class="q-label">MINŐSÉG</span></button>
         </div>
         <div id="languageSelector">
             <button id="langEnBtn" class="btn lang-btn" type="button" aria-label="English" title="English">🇬🇧</button>
@@ -1217,6 +1238,7 @@
         const bestTimeEl = document.getElementById('bestTime'); const lvlEl = document.getElementById('lvlDisplay'); const msgEl = document.getElementById('msg');
         const heartsUI = document.getElementById('heartsUI');
         const muteBtn = document.getElementById('muteBtn');
+        let manualLowDetail = localStorage.getItem('ugriBugriLowDetail') === '1';
         const mobileControls = document.getElementById('mobileControls');
         const leftTouchBtn = document.getElementById('leftTouchBtn');
         const rightTouchBtn = document.getElementById('rightTouchBtn');
@@ -1276,7 +1298,11 @@
                 levelComplete: 'SZINT TELJESÍTVE! 🚩',
                 leaderboardYou: 'TE',
                 langEn: 'English',
-                langHu: 'Magyar'
+                langHu: 'Magyar',
+                qualityHigh: 'MINŐSÉG',
+                qualityLow: 'GYORS',
+                qualityHighTitle: 'Jobb minőség aktív – kattints a gyors módért',
+                qualityLowTitle: 'Gyors mód aktív – kattints a jobb minőségért'
             },
             en: {
                 docTitle: 'BUMPY JUMPY - ',
@@ -1306,7 +1332,11 @@
                 levelComplete: 'LEVEL COMPLETE! 🚩',
                 leaderboardYou: 'YOU',
                 langEn: 'English',
-                langHu: 'Hungarian'
+                langHu: 'Hungarian',
+                qualityHigh: 'QUALITY',
+                qualityLow: 'FAST',
+                qualityHighTitle: 'High quality active – click for fast mode',
+                qualityLowTitle: 'Fast mode active – click for high quality'
             }
         };
         let currentLanguage = localStorage.getItem('ugriBugriLanguage') || 'en';
@@ -1347,6 +1377,7 @@
             langHuBtn.title = t('langHu');
             langEnBtn.classList.toggle('active', currentLanguage === 'en');
             langHuBtn.classList.toggle('active', currentLanguage === 'hu');
+            updateQualityBtn();
         }
 
         function setLanguage(lang) {
@@ -1446,6 +1477,29 @@
             if (!isMenuMusicMuted && mainMenu.style.display === 'flex') {
                 startMenuMusic();
             }
+        });
+
+        const qualityBtn = document.getElementById('qualityBtn');
+        function updateQualityBtn() {
+            const label = qualityBtn.querySelector('.q-label');
+            if (manualLowDetail) {
+                qualityBtn.childNodes[0].textContent = '⚡';
+                label.textContent = t('qualityLow');
+                qualityBtn.classList.add('low-detail');
+                qualityBtn.title = t('qualityLowTitle');
+            } else {
+                qualityBtn.childNodes[0].textContent = '🎮';
+                label.textContent = t('qualityHigh');
+                qualityBtn.classList.remove('low-detail');
+                qualityBtn.title = t('qualityHighTitle');
+            }
+        }
+        updateQualityBtn();
+        qualityBtn.addEventListener('click', () => {
+            manualLowDetail = !manualLowDetail;
+            localStorage.setItem('ugriBugriLowDetail', manualLowDetail ? '1' : '0');
+            lowDetailMode = manualLowDetail;
+            updateQualityBtn();
         });
 
         document.getElementById('resetBtn').addEventListener('click', () => {
@@ -2201,7 +2255,7 @@
 
         let particles = [];
         let frameNow = 0;
-        let lowDetailMode = false;
+        let lowDetailMode = manualLowDetail;
         let slowFrameStreak = 0;
         let cachedSkyGradient = null;
         let cachedSkyGradientHeight = -1;
@@ -2651,6 +2705,7 @@
         let activeCoins, activeEnemies, activePlatforms, activeHearts, cameraX = 0, changingLevel = false;
         let visiblePlatforms = [];
         let nearbyPlatforms = [];
+        let jumpKeyWasDown = false;
         let collectedCoinIds = new Set();
         let collectedHeartIds = new Set();
         let defeatedEnemyIds = new Set();
@@ -3159,7 +3214,11 @@ ctx.fill();
             const deltaTime = timestamp - lastTimestamp; lastTimestamp = timestamp; let dtMultiplier = deltaTime / (1000 / 60); if (dtMultiplier > 1.2) dtMultiplier = 1.2;
             if (deltaTime > 19) slowFrameStreak = Math.min(60, slowFrameStreak + 1);
             else slowFrameStreak = Math.max(0, slowFrameStreak - 1);
-            lowDetailMode = (isTouchDevice && (slowFrameStreak > 2 || (canvas.width * canvas.height > 280000))) || slowFrameStreak > 8 || (canvas.width * canvas.height > 2400000);
+            if (!manualLowDetail) {
+                lowDetailMode = (isTouchDevice && (slowFrameStreak > 2 || (canvas.width * canvas.height > 280000))) || slowFrameStreak > 8 || (canvas.width * canvas.height > 4000000);
+            } else {
+                lowDetailMode = true;
+            }
             animFrame += dtMultiplier; updateParticles(dtMultiplier);
             
             if (!gameRunning) { draw(); requestAnimationFrame(update); return; }
@@ -3182,7 +3241,9 @@ ctx.fill();
 
             if (player.grounded) player.coyoteTimer = 8; else player.coyoteTimer -= dtMultiplier;
             if (player.landLag > 0) player.landLag -= dtMultiplier;
-            if (keys['KeyW'] || keys['Space'] || keys['ArrowUp']) player.jumpBufferTimer = 8; else player.jumpBufferTimer -= dtMultiplier;
+            const jumpKeyNow = keys['KeyW'] || keys['Space'] || keys['ArrowUp'];
+            if (jumpKeyNow && !jumpKeyWasDown) player.jumpBufferTimer = 8; else if (!jumpKeyNow) player.jumpBufferTimer -= dtMultiplier;
+            jumpKeyWasDown = jumpKeyNow;
             if (player.jumpBufferTimer > 0 && player.coyoteTimer > 0) { player.velY = -jumpForce; player.grounded = false; player.coyoteTimer = 0; player.jumpBufferTimer = 0; playJumpSound(); createParticles(player.x + 20, player.y + 45, "#fff", 10, 4, 4); }
             if (!(keys['KeyW'] || keys['Space'] || keys['ArrowUp']) && player.velY < 0) player.velY *= Math.pow(0.85, dtMultiplier); 
             let currentGravity = (!player.grounded && Math.abs(player.velY) < 6) ? hangGravity : gravity;
